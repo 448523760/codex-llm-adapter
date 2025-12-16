@@ -17,3 +17,6 @@ This document outlines the requirements for the lightweight LLM proxy service. T
 - Support multiple target LLM services with configurable endpoints.
 - Use HTTP/HTTPS for communication with target services.
 - Ensure compatibility with OpenAI's API specifications.
+
+## Contracts
+- `/response` request schema (single source of truth): see `specs/response_api_request_schema.md`.
