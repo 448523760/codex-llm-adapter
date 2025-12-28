@@ -22,17 +22,17 @@ description: "Task list for implementing the lightweight LLM proxy service"
 
 **Purpose**: Provide reusable translation helpers.
 
-- [ ] T004 [P] Implement request formatter in src/utils/request_formatter.py to convert `/response` payloads into OpenAI-style `/chat/completions` payloads.
-- [ ] T005 [P] Implement response parser in src/utils/response_parser.py to map `/chat/completions` responses back to the public `/response` schema.
+- [x] T004 [P] Implement request formatter in src/utils/request_formatter.py to convert `/response` payloads into OpenAI-style `/chat/completions` payloads.
+- [x] T005 [P] Implement response parser in src/utils/response_parser.py to map `/chat/completions` responses back to the public `/response` schema.
 
 ## Phase 3: Core Proxy (User Story 1, P1)
 
 **Goal**: Translate `/response` → `/chat/completions`, proxy, and return the upstream response.
 
-- [ ] T006 [P] Add integration test in tests/test_main.py that posts a sample `/response`, stubs the upstream call, asserts the translated outbound payload, and verifies the verbatim response.
-- [ ] T007 [P] Add unit test in tests/test_services/test_llm_proxy.py that ensures llm_proxy uses request_formatter, sends via httpx, and returns the raw upstream response.
-- [ ] T008 Implement llm_proxy in src/services/llm_proxy.py to call the configured `/chat/completions` endpoint using formatted payloads and return the response data.
-- [ ] T009 Implement the `/response` route in src/main.py to forward to llm_proxy and apply response_parser as needed before returning.
+- [x] T006 [P] Add integration test in tests/test_main.py that posts a sample `/response`, stubs the upstream call, asserts the translated outbound payload, and verifies the verbatim response.
+- [x] T007 [P] Add unit test in tests/test_services/test_llm_proxy.py that ensures llm_proxy uses request_formatter, sends via httpx, and returns the raw upstream response.
+- [x] T008 Implement llm_proxy in src/services/llm_proxy.py to call the configured `/chat/completions` endpoint using formatted payloads and return the response data.
+- [x] T009 Implement the `/response` route in src/main.py to forward to llm_proxy and apply response_parser as needed before returning.
 
 ## Phase 4: Reliability & Observability (User Story 2, P2)
 

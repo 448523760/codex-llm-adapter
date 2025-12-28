@@ -6,7 +6,110 @@ from typing import Any
 def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict[str, Any]:
     """Map upstream `/chat/completions` response back to public `/response` schema.
 
-    Phase 1 scaffolding only; implemented in later phases.
+    Contract source of truth: `schema/response/index.md`.
+
+    This is a best-effort conversion from Chat Completions into a Responses-like
+    shape. Some Responses API event types cannot be reconstructed from a single
+    chat completion response.
     """
 
-    raise NotImplementedError
+    if not isinstance(upstream_payload, dict):
+        raise ValueError("upstream_payload must be an object")
+
+    upstream_id = upstream_payload.get("id")
+    created = upstream_payload.get("created")
+    model = upstream_payload.get("model")
+
+    choices = upstream_payload.get("choices")
+    if not isinstance(choices, list) or len(choices) == 0:
+        raise ValueError("Invalid upstream response: missing 'choices'")
+
+    first_choice = choices[0]
+    if not isinstance(first_choice, dict):
+        raise ValueError("Invalid upstream response: choices[0] must be object")
+
+    message = first_choice.get("message")
+    if not isinstance(message, dict):
+        raise ValueError("Invalid upstream response: choices[0].message must be object")
+
+    role = message.get("role", "assistant")
+    if role not in ("assistant", "tool"):
+        # We only expose Responses-like assistant output here.
+        role = "assistant"
+
+    output_items: list[dict[str, Any]] = []
+
+    # 1) Assistant textual content
+    content = message.get("content")
+    if isinstance(content, str) and content != "":
+        output_items.append(
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": content}],
+            }
+        )
+    elif content is None:
+        # tool_call-only assistant message; handled below
+        pass
+    elif content == "":
+        pass
+
+    # 2) Tool calls (function)
+    tool_calls = message.get("tool_calls")
+    if isinstance(tool_calls, list):
+        for call in tool_calls:
+            if not isinstance(call, dict):
+                continue
+            if call.get("type") != "function":
+                continue
+            call_id = call.get("id")
+            fn = call.get("function")
+            if not isinstance(fn, dict):
+                continue
+            name = fn.get("name")
+            arguments = fn.get("arguments")
+            if isinstance(name, str) and isinstance(arguments, str) and isinstance(call_id, str):
+                output_items.append(
+                    {
+                        "type": "function_call",
+                        "call_id": call_id,
+                        "name": name,
+                        "arguments": arguments,
+                    }
+                )
+
+    usage_in = 0
+    usage_out = 0
+    usage_total = 0
+    usage = upstream_payload.get("usage")
+    if isinstance(usage, dict):
+        prompt_tokens = usage.get("prompt_tokens")
+        completion_tokens = usage.get("completion_tokens")
+        total_tokens = usage.get("total_tokens")
+        if isinstance(prompt_tokens, int):
+            usage_in = prompt_tokens
+        if isinstance(completion_tokens, int):
+            usage_out = completion_tokens
+        if isinstance(total_tokens, int):
+            usage_total = total_tokens
+        else:
+            usage_total = usage_in + usage_out
+    else:
+        usage_total = 0
+
+    response: dict[str, Any] = {
+        "id": upstream_id if isinstance(upstream_id, str) and upstream_id else "resp_unknown",
+        "object": "response",
+        "created_at": int(created) if isinstance(created, (int, float)) else 0,
+        "model": model if isinstance(model, str) else "",
+        "status": "completed",
+        "output": output_items,
+        "usage": {
+            "input_tokens": usage_in,
+            "output_tokens": usage_out,
+            "total_tokens": usage_total,
+        },
+    }
+
+    return response
