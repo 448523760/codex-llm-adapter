@@ -1,3 +1,7 @@
+---
+Deprecated: since it not necessary
+---
+
 # `/response` API — Request Schema (Contract)
 
 ## Goal
