@@ -32,23 +32,27 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
     if not isinstance(message, dict):
         raise ValueError("Invalid upstream response: choices[0].message must be object")
 
+    reasoning_parts = _extract_reasoning_parts(message.get("reasoning_content"))
     role = message.get("role", "assistant")
     if role not in ("assistant", "tool"):
         # We only expose Responses-like assistant output here.
         role = "assistant"
 
+    reasoning_attached = False
     output_items: list[dict[str, Any]] = []
 
     # 1) Assistant textual content
     content = message.get("content")
     if isinstance(content, str) and content != "":
-        output_items.append(
-            {
-                "type": "message",
-                "role": "assistant",
-                "content": [{"type": "output_text", "text": content}],
-            }
-        )
+        message_item: dict[str, Any] = {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": content}],
+        }
+        if reasoning_parts:
+            message_item["reasoning"] = reasoning_parts
+            reasoning_attached = True
+        output_items.append(message_item)
     elif content is None:
         # tool_call-only assistant message; handled below
         pass
@@ -70,14 +74,21 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
             name = fn.get("name")
             arguments = fn.get("arguments")
             if isinstance(name, str) and isinstance(arguments, str) and isinstance(call_id, str):
-                output_items.append(
-                    {
-                        "type": "function_call",
-                        "call_id": call_id,
-                        "name": name,
-                        "arguments": arguments,
-                    }
-                )
+                call_item: dict[str, Any] = {
+                    "type": "function_call",
+                    "call_id": call_id,
+                    "name": name,
+                    "arguments": arguments,
+                }
+                if reasoning_parts and not reasoning_attached:
+                    call_item["reasoning"] = reasoning_parts
+                    reasoning_attached = True
+                output_items.append(call_item)
+
+    if reasoning_parts and not reasoning_attached:
+        output_items.append(
+            {"type": "message", "role": role, "content": [], "reasoning": reasoning_parts}
+        )
 
     usage_in = 0
     usage_out = 0
@@ -113,3 +124,20 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
     }
 
     return response
+
+
+def _extract_reasoning_parts(reasoning_content: Any) -> list[dict[str, str]]:
+    parts: list[dict[str, str]] = []
+    if isinstance(reasoning_content, str):
+        if reasoning_content:
+            parts.append({"type": "output_text", "text": reasoning_content})
+    elif isinstance(reasoning_content, list):
+        for chunk in reasoning_content:
+            if not isinstance(chunk, dict):
+                continue
+            if chunk.get("type") != "text":
+                continue
+            text = chunk.get("text")
+            if isinstance(text, str) and text:
+                parts.append({"type": "output_text", "text": text})
+    return parts

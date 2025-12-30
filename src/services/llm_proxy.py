@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator
 
 import httpx
 import tomllib
@@ -76,3 +76,22 @@ async def proxy_response(*, response_payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(data, dict):
             raise ValueError("Upstream response must be a JSON object")
         return data
+
+
+async def proxy_response_stream(*, response_payload: dict[str, Any]) -> AsyncIterator[bytes]:
+    """Stream a public `/response` payload to an upstream `/chat/completions`."""
+
+    cfg = _load_config()
+    url = _build_chat_completions_url(cfg)
+
+    chat_payload = format_response_request(response_payload=response_payload)
+
+    async def _stream() -> AsyncIterator[bytes]:
+        async with httpx.AsyncClient(timeout=cfg.request_timeout_seconds) as client:
+            async with client.stream("POST", url, json=chat_payload) as resp:
+                resp.raise_for_status()
+                async for chunk in resp.aiter_bytes():
+                    if chunk:
+                        yield chunk
+
+    return _stream()
