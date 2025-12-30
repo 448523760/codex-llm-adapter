@@ -86,12 +86,17 @@ async def proxy_response_stream(*, response_payload: dict[str, Any]) -> AsyncIte
 
     chat_payload = format_response_request(response_payload=response_payload)
 
-    async def _stream() -> AsyncIterator[bytes]:
-        async with httpx.AsyncClient(timeout=cfg.request_timeout_seconds) as client:
-            async with client.stream("POST", url, json=chat_payload) as resp:
-                resp.raise_for_status()
-                async for chunk in resp.aiter_bytes():
-                    if chunk:
-                        yield chunk
+    return _stream_chat_completions(
+        url=url, timeout=cfg.request_timeout_seconds, chat_payload=chat_payload
+    )
 
-    return _stream()
+
+async def _stream_chat_completions(
+    *, url: str, timeout: float, chat_payload: dict[str, Any]
+) -> AsyncIterator[bytes]:
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        async with client.stream("POST", url, json=chat_payload) as resp:
+            resp.raise_for_status()
+            async for chunk in resp.aiter_bytes():
+                if chunk:
+                    yield chunk
