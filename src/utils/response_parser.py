@@ -32,7 +32,7 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
     if not isinstance(message, dict):
         raise ValueError("Invalid upstream response: choices[0].message must be object")
 
-    reasoning_parts = _extract_reasoning_parts(message.get("reasoning_content"))
+    reasoning_parts = _format_reasoning_content(message.get("reasoning_content"))
     role = message.get("role", "assistant")
     if role not in ("assistant", "tool"):
         # We only expose Responses-like assistant output here.
@@ -86,9 +86,7 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
                 output_items.append(call_item)
 
     if reasoning_parts and not reasoning_attached:
-        output_items.append(
-            {"type": "message", "role": role, "content": [], "reasoning": reasoning_parts}
-        )
+        output_items.append({"type": "reasoning", "role": role, "content": reasoning_parts})
 
     usage_in = 0
     usage_out = 0
@@ -126,7 +124,7 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
     return response
 
 
-def _extract_reasoning_parts(reasoning_content: Any) -> list[dict[str, str]]:
+def _format_reasoning_content(reasoning_content: Any) -> list[dict[str, str]]:
     parts: list[dict[str, str]] = []
     if isinstance(reasoning_content, str):
         if reasoning_content:
