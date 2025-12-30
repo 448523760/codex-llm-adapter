@@ -125,6 +125,7 @@ def parse_chat_completions_response(*, upstream_payload: dict[str, Any]) -> dict
 
 
 def _format_reasoning_content(reasoning_content: Any) -> list[dict[str, str]]:
+    """Normalize Chat Completions reasoning content into response output_text blocks."""
     parts: list[dict[str, str]] = []
     if isinstance(reasoning_content, str):
         if reasoning_content:
