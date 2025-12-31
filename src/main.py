@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 import logging
 
 from fastapi import Body, FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 
 from logging_config import configure_logging
-from services.llm_proxy import proxy_response
-from utils.response_parser import parse_chat_completions_response
+from services.llm_proxy import proxy_response_stream
 
 
 logger = logging.getLogger("codex_llm_adapter")
@@ -25,9 +25,15 @@ app = FastAPI(title="codex_llm_adapter", lifespan=lifespan)
 
 
 @app.post("/response")
-async def response_endpoint(payload: dict = Body(...)) -> dict:
+async def response_endpoint(payload: dict = Body(...)) -> StreamingResponse:
 	try:
-		upstream = await proxy_response(response_payload=payload)
-		return parse_chat_completions_response(upstream_payload=upstream)
+		stream = payload.get("stream")
+		if stream is not True:
+			raise HTTPException(
+				status_code=400, detail="The stream parameter must be true; non-streaming is unsupported."
+			)
+
+		stream_iter = await proxy_response_stream(response_payload=payload)
+		return StreamingResponse(stream_iter, media_type="text/event-stream")
 	except ValueError as e:
 		raise HTTPException(status_code=400, detail=str(e))
