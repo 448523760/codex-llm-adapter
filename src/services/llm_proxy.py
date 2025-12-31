@@ -85,10 +85,12 @@ async def proxy_response_stream(*, response_payload: dict[str, Any]) -> AsyncIte
     url = _build_chat_completions_url(cfg)
 
     chat_payload = format_response_request(response_payload=response_payload)
+    chat_payload["stream"] = True
 
-    return _stream_chat_completions(
+    async for chunk in _stream_chat_completions(
         url=url, timeout=cfg.request_timeout_seconds, chat_payload=chat_payload
-    )
+    ):
+        yield chunk
 
 
 async def _stream_chat_completions(
