@@ -8,31 +8,31 @@ description: "Task list for implementing the lightweight LLM proxy service"
 
 **Purpose**: Lock request/response contracts and mappings before building endpoints.
 
-- [ ] T000 Define the `/response` API request/response schema and the translation guide to the upstream `/chat/completions` payload/response (single source of truth for shapes and fields).
+- [x] T000 Define the `/response` API request/response schema and the translation guide to the upstream `/chat/completions` payload/response (single source of truth for shapes and fields).
 
 ## Phase 1: Setup (Project Initialization)
 
 **Purpose**: Establish layout, manifests, and uv recipes described in plan.md.
 
-- [ ] T001 Scaffold src/main.py, src/services/llm_proxy.py, src/utils/request_formatter.py, src/utils/response_parser.py, tests/test_main.py, tests/test_services/test_llm_proxy.py, tests/test_utils/test_request_formatter.py, and tests/test_utils/test_response_parser.py so the structure matches the plan.
-- [ ] T002 Define dependencies, metadata, and configuration hints in project.toml for fastapi, httpx, pytest, uv, and target service settings.
-- [ ] T003 [P] Create uvproject.toml with recipes for `uv project`, `uv run`, `uv test`, and `uv deps` to standardize bootstrap/run/test/deps.
+- [x] T001 Scaffold src/main.py, src/services/llm_proxy.py, src/utils/request_formatter.py, src/utils/response_parser.py, tests/test_main.py, tests/test_services/test_llm_proxy.py, tests/test_utils/test_request_formatter.py, and tests/test_utils/test_response_parser.py so the structure matches the plan.
+- [x] T002 Define dependencies, metadata, and configuration hints in project.toml for fastapi, httpx, pytest, uv, and target service settings.
+- [x] T003 [P] Create uvproject.toml with recipes for `uv project`, `uv run`, `uv test`, and `uv deps` to standardize bootstrap/run/test/deps.
 
 ## Phase 2: Foundational Utilities
 
 **Purpose**: Provide reusable translation helpers.
 
-- [ ] T004 [P] Implement request formatter in src/utils/request_formatter.py to convert `/response` payloads into OpenAI-style `/chat/completions` payloads.
-- [ ] T005 [P] Implement response parser in src/utils/response_parser.py to map `/chat/completions` responses back to the public `/response` schema.
+- [x] T004 [P] Implement request formatter in src/utils/request_formatter.py to convert `/response` payloads into OpenAI-style `/chat/completions` payloads.
+- [x] T005 [P] Implement response parser in src/utils/response_parser.py to map `/chat/completions` responses back to the public `/response` schema.
 
 ## Phase 3: Core Proxy (User Story 1, P1)
 
 **Goal**: Translate `/response` → `/chat/completions`, proxy, and return the upstream response.
 
-- [ ] T006 [P] Add integration test in tests/test_main.py that posts a sample `/response`, stubs the upstream call, asserts the translated outbound payload, and verifies the verbatim response.
-- [ ] T007 [P] Add unit test in tests/test_services/test_llm_proxy.py that ensures llm_proxy uses request_formatter, sends via httpx, and returns the raw upstream response.
-- [ ] T008 Implement llm_proxy in src/services/llm_proxy.py to call the configured `/chat/completions` endpoint using formatted payloads and return the response data.
-- [ ] T009 Implement the `/response` route in src/main.py to forward to llm_proxy and apply response_parser as needed before returning.
+- [x] T006 [P] Add integration test in tests/test_main.py that posts a sample `/response`, stubs the upstream call, asserts the translated outbound payload, and verifies the verbatim response.
+- [x] T007 [P] Add unit test in tests/test_services/test_llm_proxy.py that ensures llm_proxy uses request_formatter, sends via httpx, and returns the raw upstream response.
+- [x] T008 Implement llm_proxy in src/services/llm_proxy.py to call the configured `/chat/completions` endpoint using formatted payloads and return the response data.
+- [x] T009 Implement the `/response` route in src/main.py to forward to llm_proxy and apply response_parser as needed before returning.
 
 ## Phase 4: Reliability & Observability (User Story 2, P2)
 

@@ -1,0 +1,25 @@
+# Project metadata & configuration hints for the LLM proxy service.
+#
+# Note: uv itself uses `pyproject.toml` for dependency management.
+# This file exists because the specs reference `project.toml` as a place
+# to document dependencies and target service settings.
+
+[project]
+name = "codex-llm-adapter"
+description = "Lightweight LLM proxy service"
+
+[project.dependencies]
+# Runtime deps (mirrors `pyproject.toml`)
+fastapi = ">=0.128.0"
+httpx = ">=0.28.1"
+uvicorn = ">=0.40.0"
+
+[project.dependency-groups.dev]
+pytest = ">=9.0.2"
+pytest-asyncio = ">=1.3.0"
+
+[llm_proxy]
+# Upstream OpenAI-compatible endpoint (to be used in Phase 3+).
+upstream_base_url = "http://localhost:8001"
+chat_completions_path = "/chat/completions"
+request_timeout_seconds = 30

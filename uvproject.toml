@@ -1,0 +1,16 @@
+# Convenience "recipes" referenced by specs/plan.md.
+# uv doesn't execute this file natively; it is intended as documented
+# commands the team can standardize on.
+
+[recipes]
+# Bootstrap / create venv + lock + sync
+project = "uv sync"
+
+# Run the API server
+run = "uv run uvicorn src.main:app --host 127.0.0.1 --port 8000"
+
+# Run tests
+test = "uv run pytest"
+
+# Refresh lockfile / export requirements
+deps = "uv lock; uv export -o requirements.txt --no-dev"
