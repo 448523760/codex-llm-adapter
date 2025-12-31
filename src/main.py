@@ -29,9 +29,11 @@ async def response_endpoint(payload: dict = Body(...)) -> StreamingResponse:
 	try:
 		stream = payload.get("stream")
 		if stream is not True:
-			raise HTTPException(status_code=400, detail="stream must be true")
+			raise HTTPException(
+				status_code=400, detail="The stream parameter must be true; non-streaming is unsupported."
+			)
 
-		stream_iter = proxy_response_stream(response_payload=payload)
+		stream_iter = await proxy_response_stream(response_payload=payload)
 		return StreamingResponse(stream_iter, media_type="text/event-stream")
 	except ValueError as e:
 		raise HTTPException(status_code=400, detail=str(e))
